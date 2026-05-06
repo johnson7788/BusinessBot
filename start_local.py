@@ -81,7 +81,7 @@ SERVICES = {
     },
     "simple": {
         "name": "Simple Front",
-        "port": 3082,
+        "port": 3085,
         "color": "\033[95m",  # light magenta
     },
 }
@@ -513,10 +513,10 @@ def start_manage(api_url: str = "http://127.0.0.1:8080") -> "subprocess.Popen | 
 # ── Simple Front Dev Server ───────────────────────────────────────────
 
 def start_simple(frontend_host: str = "0.0.0.0", api_url: str = "http://127.0.0.1:8080") -> "subprocess.Popen | None":
-    log("启动 Simple Front Dev Server (端口 3082)...")
+    log("启动 Simple Front Dev Server (端口 3085)...")
 
-    if is_port_in_use(3082):
-        warn("端口 3082 已被占用，跳过 simple")
+    if is_port_in_use(3085):
+        warn("端口 3085 已被占用，跳过 simple")
         return None
 
     simple_dir = os.path.join(PROJECT_DIR, "simple_front")
@@ -525,7 +525,7 @@ def start_simple(frontend_host: str = "0.0.0.0", api_url: str = "http://127.0.0.
         log("安装 simple-front 依赖...")
         subprocess.run("npm install", cwd=simple_dir, shell=True, check=True)
 
-    dev_cmd = f"npm run dev -- --host {frontend_host} --port 3082"
+    dev_cmd = f"npm run dev -- --host {frontend_host} --port 3085"
     proc = subprocess.Popen(
         dev_cmd,
         cwd=simple_dir,
@@ -590,7 +590,7 @@ def stop_all():
 
 
 def _stop_all_unix():
-    patterns = ["bridge/start", "openclaw gateway", "uvicorn app.main:app", "vite.*3080", "vite.*3082", "next.*3081"]
+    patterns = ["bridge/start", "openclaw gateway", "uvicorn app.main:app", "vite.*3080", "vite.*3085", "next.*3081"]
     for pattern in patterns:
         result = subprocess.run(
             f"pgrep -f '{pattern}'",
@@ -717,6 +717,7 @@ def _sync_agents(src_agents_dir: str, openclaw_home: str) -> int:
             continue
 
         agent_id = entry.lower()
+        agent_display_name = _read_agent_display_name(src_agent, entry)
 
         # 1. 创建 agents/<id>/ 目录（gateway 会扫描此目录发现 agent）
         agent_dir = os.path.join(openclaw_home, "agents", agent_id)
@@ -730,7 +731,7 @@ def _sync_agents(src_agents_dir: str, openclaw_home: str) -> int:
         # 3. 记录待注册的 agent
         agents_to_register.append({
             "id": agent_id,
-            "name": entry,
+            "name": agent_display_name,
             "workspace": workspace_dir,
         })
 
@@ -753,6 +754,22 @@ def _sync_agents(src_agents_dir: str, openclaw_home: str) -> int:
         _register_agents_in_config(config_path, agents_to_register)
 
     return copied
+
+
+def _read_agent_display_name(src_agent_dir: str, fallback: str) -> str:
+    """从模板 IDENTITY.md 的一级标题读取 Agent 展示名。"""
+    identity_path = os.path.join(src_agent_dir, "IDENTITY.md")
+    try:
+        with open(identity_path, encoding="utf-8") as f:
+            for line in f:
+                stripped = line.strip()
+                if stripped.startswith("# "):
+                    name = stripped[2:].strip()
+                    if name:
+                        return name
+    except OSError:
+        pass
+    return fallback
 
 
 def _register_agents_in_config(config_path: str, agents: list):

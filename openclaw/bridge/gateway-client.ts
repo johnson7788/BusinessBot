@@ -160,7 +160,11 @@ export class BridgeGatewayClient {
   private connect(onFirstConnect?: (value: void) => void, onFirstError?: (err: Error) => void): void {
     if (this.stopped) return;
 
-    const ws = new WebSocket(this.url);
+    const ws = new WebSocket(this.url, {
+      headers: {
+        origin: this.url.replace(/^ws:/, "http:").replace(/^wss:/, "https:"),
+      },
+    });
     this.ws = ws;
 
     ws.on("open", () => {
@@ -181,8 +185,8 @@ export class BridgeGatewayClient {
         if (evt.event === "connect.challenge") {
           const nonce = String((evt.payload as Record<string, unknown>).nonce || "").trim();
           const signedAtMs = Date.now();
-          const clientId = "gateway-client";
-          const clientMode = "backend";
+          const clientId = "openclaw-control-ui";
+          const clientMode = "webchat";
           const role = "operator";
           const scopes = ["operator.admin"];
           const platform = process.platform;

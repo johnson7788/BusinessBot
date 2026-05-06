@@ -28,6 +28,24 @@ function parseModelInput(raw: string | undefined): Array<"text" | "image"> {
   return Array.from(new Set(items)) as Array<"text" | "image">;
 }
 
+function looksLikeBrokenWindowsHome(value: unknown): value is string {
+  return typeof value === "string" && value.includes("�");
+}
+
+function repairAgentWorkspace(agent: Record<string, unknown>, cfg: BridgeConfig): void {
+  const agentId = typeof agent.id === "string" && agent.id.trim() ? agent.id.trim() : "";
+  if (looksLikeBrokenWindowsHome(agent.workspace)) {
+    agent.workspace = path.join(cfg.openclawHome, agentId ? `workspace-${agentId}` : "workspace");
+  }
+  if (looksLikeBrokenWindowsHome(agent.agentDir) && agentId) {
+    agent.agentDir = path.join(cfg.openclawHome, "agents", agentId, "agent");
+  }
+}
+
+function isManagedBuiltInAgent(agentId: string): boolean {
+  return new Set(["main", "manager", "programmer", "researcher", "hr", "doctor"]).has(agentId);
+}
+
 export function loadConfig(): BridgeConfig {
   const proxyUrl = process.env.NANOBOT_PROXY__URL || "http://localhost:8080/llm/v1";
   const proxyToken = process.env.NANOBOT_PROXY__TOKEN || "dev-token";
@@ -140,8 +158,11 @@ export function writeOpenclawConfig(cfg: BridgeConfig): void {
     // - 已配置非 platform-proxy/ 的模型：用户自选的第三方模型，保留不覆盖
       if (!existing.agents) existing.agents = {};
       if (!existing.agents.defaults) existing.agents.defaults = {};
+      if (looksLikeBrokenWindowsHome(existing.agents.defaults.workspace)) {
+        existing.agents.defaults.workspace = cfg.workspacePath;
+      }
       const currentModel = existing.agents.defaults.model;
-      if (!currentModel || currentModel.startsWith("platform-proxy/")) {
+      if (!currentModel || currentModel === cfg.model || currentModel.startsWith("platform-proxy/")) {
         existing.agents.defaults.model = openclawConfig.agents.defaults.model;
       }
 
@@ -161,7 +182,11 @@ export function writeOpenclawConfig(cfg: BridgeConfig): void {
       // - Already has platform-proxy/ prefix: leave untouched
       if (Array.isArray(existing.agents.list)) {
         for (const agent of existing.agents.list) {
-          if (!agent.model) {
+          repairAgentWorkspace(agent, cfg);
+          const agentId = typeof agent.id === "string" ? agent.id : "";
+          if (isManagedBuiltInAgent(agentId)) {
+            agent.model = proxyModel;
+          } else if (!agent.model) {
             agent.model = proxyModel;
           } else if (typeof agent.model === "string" && !agent.model.startsWith("platform-proxy/")) {
             agent.model = `platform-proxy/${agent.model}`;

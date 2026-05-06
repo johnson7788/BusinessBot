@@ -2,17 +2,17 @@
 
 FROM node:22-slim AS bridge-base
 
-# 1) Bootstrap CA certs via HTTP mirror first (avoid HTTPS cert chicken-and-egg)
+# 1) Bootstrap CA certs via HTTP mirror first
 RUN --mount=type=cache,id=openclaw-bridge-apt-cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=openclaw-bridge-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    sed -i 's|http://deb.debian.org|http://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources && \
-    sed -i 's|http://security.debian.org|http://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources && \
-    apt-get update && \
+    sed -i 's|http://deb.debian.org/debian|http://mirrors.aliyun.com/debian|g' /etc/apt/sources.list.d/debian.sources && \
+    sed -i 's|http://deb.debian.org/debian-security|http://mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # 2) Switch to HTTPS mirror after certs are available
-RUN sed -i 's|http://mirrors.tuna.tsinghua.edu.cn|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources
+RUN sed -i 's|http://mirrors.aliyun.com|https://mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources
 
 # 3) Use domestic npm mirror
 RUN npm config set registry https://registry.npmmirror.com
@@ -20,7 +20,7 @@ RUN npm config set registry https://registry.npmmirror.com
 # 4) Install system dependencies
 RUN --mount=type=cache,id=openclaw-bridge-apt-cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=openclaw-bridge-apt-lists,target=/var/lib/apt/lists,sharing=locked \
-    apt-get update && \
+    apt-get -o Acquire::Retries=5 -o Acquire::https::Timeout=30 update && \
     apt-get install -y --no-install-recommends \
         docker.io \
         git \

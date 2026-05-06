@@ -8,11 +8,42 @@
   --color-light-border: #e2e8f0;
   --color-light-text: #1e293b;
   --color-light-text-secondary: #64748b;
-  --color-accent-blue: #3b82f6;
+  --color-accent-blue: #0891b2;
   --color-accent-green: #22c55e;
   --color-accent-yellow: #eab308;
   --color-accent-red: #ef4444;
   --color-accent-purple: #8b5cf6;
+}
+
+:root {
+  --color-light-bg: #ffffff;
+  --color-light-sidebar: #eef7fb;
+  --color-light-card: #ffffff;
+  --color-light-card-hover: #f1f7fa;
+  --color-light-border: #dce8ee;
+  --color-light-text: #1e293b;
+  --color-light-text-secondary: #64748b;
+  --color-accent-blue: #0891b2;
+  --color-accent-green: #22c55e;
+  --color-accent-yellow: #eab308;
+  --color-accent-red: #ef4444;
+  --color-accent-purple: #8b5cf6;
+  --appearance-contrast: 52;
+}
+
+:root[data-theme='dark'] {
+  --color-light-bg: #101418;
+  --color-light-sidebar: #151b20;
+  --color-light-card: #1a2026;
+  --color-light-card-hover: #222a31;
+  --color-light-border: #2f3a43;
+  --color-light-text: #eef4f7;
+  --color-light-text-secondary: #a6b4be;
+}
+
+:root[data-contrast='high'] {
+  --color-light-border: #c8d8e0;
+  --color-light-text-secondary: #475569;
 }
 
 body {
@@ -21,17 +52,125 @@ body {
   background-color: var(--color-light-bg);
   color: var(--color-light-text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-light-text-secondary) 34%, transparent) transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-light-text-secondary) 34%, transparent) transparent;
+}
+
+.app-sidebar {
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    backdrop-filter 180ms ease;
+  will-change: transform;
+}
+
+:root[data-sidebar='translucent'] .app-sidebar {
+  background-color: color-mix(in srgb, var(--color-light-sidebar) 86%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+:root[data-density='compact'] .workspace-card {
+  min-height: 72px;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.mobile-sidebar-backdrop {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease, backdrop-filter 220ms ease;
+}
+
+.mobile-sidebar-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-chevron {
+  transition: transform 180ms ease;
+}
+
+.sidebar-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.sidebar-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    grid-template-rows 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-collapse > div {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.agent-panel-backdrop {
+  animation: fadeIn 160ms ease-out;
+}
+
+.agent-panel {
+  animation: slideInRight 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-light-border) 54%, transparent);
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-light-card) 72%, transparent),
+    transparent
+  );
+  animation: skeletonShimmer 1.35s ease-in-out infinite;
 }
 
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--color-light-bg);
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--color-light-border);
-  border-radius: 3px;
+  min-height: 32px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-light-text-secondary) 26%, transparent);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-light-text-secondary) 46%, transparent);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 @keyframes slideInRight {
@@ -44,6 +183,106 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes skeletonShimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes loginGridDrift {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 42px 42px, 42px 42px; }
+}
+
+@keyframes loginBgFlow {
+  0% {
+    background-position: 0% 48%, 80% 52%;
+    transform: translate3d(-4%, -2%, 0) rotate(-1deg);
+    opacity: 0.48;
+  }
+  50% {
+    background-position: 100% 52%, 10% 46%;
+    transform: translate3d(4%, 3%, 0) rotate(2deg);
+    opacity: 0.88;
+  }
+  100% {
+    background-position: 0% 48%, 80% 52%;
+    transform: translate3d(-4%, -2%, 0) rotate(-1deg);
+    opacity: 0.48;
+  }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+.login-shell {
+  --login-pointer-x: 50%;
+  --login-pointer-y: 42%;
+}
+
+.login-bg-grid {
+  animation: loginGridDrift 22s linear infinite;
+  background-image:
+    linear-gradient(rgba(8, 145, 178, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 145, 178, 0.12) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.login-bg-flow {
+  animation: loginBgFlow 12s ease-in-out infinite;
+  background:
+    linear-gradient(115deg, transparent 8%, rgba(8, 145, 178, 0.24) 33%, rgba(99, 102, 241, 0.16) 52%, transparent 76%),
+    linear-gradient(22deg, transparent 14%, rgba(34, 197, 94, 0.13) 46%, transparent 74%);
+  background-size: 180% 180%, 160% 160%;
+}
+
+.login-pointer-light {
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 28%,
+      rgba(255, 255, 255, 0.36) 46%,
+      transparent 66%
+    );
+  mask-image: radial-gradient(
+    ellipse 34rem 24rem at var(--login-pointer-x) var(--login-pointer-y),
+    black 0%,
+    rgba(0, 0, 0, 0.7) 34%,
+    transparent 72%
+  );
+  opacity: 0.9;
+  transition: opacity 180ms ease;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-light-text);
+  caret-color: var(--color-light-text);
+  box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.92) inset;
+  transition: background-color 9999s ease-out, color 9999s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-bg-grid,
+  .login-bg-flow,
+  .animate-fade-in,
+  .skeleton-shimmer::after,
+  .agent-panel,
+  .agent-panel-backdrop {
+    animation: none;
+  }
+
+  .login-pointer-light {
+    display: none;
+  }
+
+  .app-sidebar,
+  .mobile-sidebar-backdrop,
+  .sidebar-chevron,
+  .sidebar-collapse {
+    transition: none;
+  }
 }

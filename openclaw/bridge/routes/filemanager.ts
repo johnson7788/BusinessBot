@@ -253,6 +253,44 @@ export function filemanagerRoutes(config: BridgeConfig): Router {
     });
   }));
 
+  // PUT /api/filemanager/write  (json: { path, content })
+  router.put("/filemanager/write", asyncHandler(async (req, res) => {
+    const relPath = typeof req.body?.path === "string" ? req.body.path : "";
+    const content = typeof req.body?.content === "string" ? req.body.content : null;
+    if (!relPath) {
+      res.status(400).json({ detail: "Path is required" });
+      return;
+    }
+    if (content === null) {
+      res.status(400).json({ detail: "Content is required" });
+      return;
+    }
+
+    const absPath = sanitizePath(relPath, rootDir);
+    if (!absPath) {
+      res.status(400).json({ detail: "Invalid path" });
+      return;
+    }
+    if (fs.existsSync(absPath) && fs.statSync(absPath).isDirectory()) {
+      res.status(400).json({ detail: "Cannot write content to a directory" });
+      return;
+    }
+
+    fs.mkdirSync(path.dirname(absPath), { recursive: true });
+    fs.writeFileSync(absPath, content, "utf-8");
+    const stat = fs.statSync(absPath);
+    const fileName = path.basename(absPath);
+
+    res.json({
+      name: fileName,
+      path: path.relative(rootDir, absPath),
+      type: "file",
+      size: stat.size,
+      content_type: mime.lookup(fileName) || "text/plain",
+      modified: stat.mtime.toISOString(),
+    });
+  }));
+
   // DELETE /api/filemanager/delete?path=
   router.delete("/filemanager/delete", asyncHandler(async (req, res) => {
     const relPath = req.query.path as string;

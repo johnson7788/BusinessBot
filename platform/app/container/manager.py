@@ -63,6 +63,30 @@ def _is_host_port_in_use(client: docker.DockerClient, host_port: int) -> bool:
     return False
 
 
+def _expected_container_name(user_id: str) -> str:
+    return f"openclaw-user-{user_id[:8]}"
+
+
+async def _recreate_container_record(db: AsyncSession, record: Container, existing_container=None) -> Container:
+    """Drop a stale DB binding and recreate the user's OpenClaw container."""
+    if existing_container is not None:
+        try:
+            existing_container.remove(force=True)
+        except DockerNotFound:
+            pass
+
+    user_id = record.user_id
+    await db.delete(record)
+    await db.commit()
+    created = await create_container(db, user_id)
+    if created is not None:
+        return created
+    record = await get_container(db, user_id)
+    if record is not None:
+        return record
+    raise RuntimeError("Failed to recreate container")
+
+
 def _build_expose_port_skill_markdown(
     user_id: str,
     container_name: str,
@@ -393,6 +417,22 @@ async def ensure_running(db: AsyncSession, user_id: str) -> Container:
 
     client = _docker()
 
+    if record.docker_id:
+        try:
+            c = client.containers.get(record.docker_id)
+            if c.name != _expected_container_name(user_id):
+                return await _recreate_container_record(db, record, c)
+        except DockerNotFound:
+            await db.delete(record)
+            await db.commit()
+            created = await create_container(db, user_id)
+            if created is not None:
+                return created
+            record = await get_container(db, user_id)
+            if record is not None:
+                return record
+            raise RuntimeError("Failed to recreate container")
+
     if record.status == "paused":
         try:
             c = client.containers.get(record.docker_id)
@@ -406,27 +446,11 @@ async def ensure_running(db: AsyncSession, user_id: str) -> Container:
             record.status = "running"
         except DockerNotFound:
             # Container was removed externally — recreate
-            await db.delete(record)
-            await db.commit()
-            created = await create_container(db, user_id)
-            if created is not None:
-                return created
-            record = await get_container(db, user_id)
-            if record is not None:
-                return record
-            raise RuntimeError("Failed to recreate container")
+            return await _recreate_container_record(db, record)
 
     elif record.status == "archived":
         # Recreate from persisted data volumes
-        await db.delete(record)
-        await db.commit()
-        created = await create_container(db, user_id)
-        if created is not None:
-            return created
-        record = await get_container(db, user_id)
-        if record is not None:
-            return record
-        raise RuntimeError("Failed to recreate container")
+        return await _recreate_container_record(db, record)
 
     elif record.status == "running":
         # Verify it's actually running
@@ -449,15 +473,7 @@ async def ensure_running(db: AsyncSession, user_id: str) -> Container:
                     await db.commit()
                 break
         except DockerNotFound:
-            await db.delete(record)
-            await db.commit()
-            created = await create_container(db, user_id)
-            if created is not None:
-                return created
-            record = await get_container(db, user_id)
-            if record is not None:
-                return record
-            raise RuntimeError("Failed to recreate container")
+            return await _recreate_container_record(db, record)
 
     return record
 
