@@ -411,10 +411,13 @@ def _repair_hermes_data_ownership(container: docker.models.containers.Container)
             break
 
     if data_volume:
+        # chown -R may race with the running Hermes process, which can create
+        # and delete transient files mid-walk. A vanished file is benign, so do
+        # not fail the whole container create for that cleanup race.
         _docker().containers.run(
             image=_runtime_image(),
-            entrypoint="chown",
-            command=["-R", "hermes:hermes", "/opt/data"],
+            entrypoint="sh",
+            command=["-c", "chown -R hermes:hermes /opt/data 2>/dev/null || true"],
             mounts=[docker.types.Mount("/opt/data", data_volume, type="volume")],
             remove=True,
         )

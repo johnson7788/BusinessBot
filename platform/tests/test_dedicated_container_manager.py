@@ -197,8 +197,8 @@ def test_write_hermes_runtime_files_repairs_data_volume_ownership(monkeypatch):
     assert runner.calls == [
         {
             "image": "nanobot-hermes-agent:latest",
-            "entrypoint": "chown",
-            "command": ["-R", "hermes:hermes", "/opt/data"],
+            "entrypoint": "sh",
+            "command": ["-c", "chown -R hermes:hermes /opt/data 2>/dev/null || true"],
             "mounts": [{"target": "/opt/data", "source": "hermes-anonymous-data", "type": "volume"}],
             "remove": True,
         }
