@@ -186,7 +186,10 @@ def _container_matches_runtime(container: docker.models.containers.Container) ->
     if _runtime_backend() == "hermes":
         return (
             "API_SERVER_ENABLED=true" in env
-            and "/opt/hermes/docker/entrypoint.sh" in entrypoint
+            and (
+                "/opt/hermes/docker/entrypoint.sh" in entrypoint
+                or "/opt/hermes/docker/main-wrapper.sh" in entrypoint
+            )
             and "gateway" in command
         )
 

@@ -263,8 +263,19 @@ def test_hermes_runtime_rejects_legacy_openclaw_container(monkeypatch):
             }
         }
     )
+    hermes_s6 = SimpleNamespace(
+        attrs={
+            "Config": {
+                "Image": "nanobot-hermes-agent:latest",
+                "Entrypoint": ["/init", "/opt/hermes/docker/main-wrapper.sh"],
+                "Cmd": ["gateway", "run", "-v"],
+                "Env": ["API_SERVER_ENABLED=true", "HERMES_HOME=/opt/data"],
+            }
+        }
+    )
 
     monkeypatch.setattr(manager.settings, "dedicated_runtime_backend", "hermes")
 
     assert manager._container_matches_runtime(legacy) is False
     assert manager._container_matches_runtime(hermes) is True
+    assert manager._container_matches_runtime(hermes_s6) is True
