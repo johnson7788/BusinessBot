@@ -231,6 +231,13 @@ RUN mkdir -p /opt/hermes/bin && \
     chown -R root:root /opt/hermes && \
     chmod -R a+rX /opt/hermes && \
     chmod -R a-w /opt/hermes
+# Debian's python3-venv can leave the system interpreter without a `pip`
+# command, while user containers expect `pip install` to work with PIP_USER=1
+# and the persisted /opt/data/.local user site. Bootstrap system pip without
+# changing the runtime install target.
+RUN curl -fsSL "${GITHUB_MIRROR}https://raw.githubusercontent.com/pypa/get-pip/main/public/get-pip.py" -o /tmp/get-pip.py \
+    && /usr/bin/python3 /tmp/get-pip.py --break-system-packages \
+    && rm /tmp/get-pip.py
 # The ``.install_method`` stamp is baked next to the running code (the install
 # tree), NOT into $HERMES_HOME. $HERMES_HOME (/opt/data) is a shared data
 # volume that is commonly bind-mounted from the host and even shared with a
