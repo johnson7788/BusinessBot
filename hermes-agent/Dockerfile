@@ -355,7 +355,10 @@ ENV HERMES_LAZY_INSTALL_TARGET=/opt/data/lazy-packages
 # shim wins PATH resolution. The shim's last act is to exec the venv
 # binary by absolute path, so this PATH ordering is transparent to
 # every other consumer.
-ENV PATH="/opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.local/bin:${PATH}"
+ENV PATH="/opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.npm-global/bin:/opt/data/.local/bin:${PATH}"
+# Debian login shells reset PATH in /etc/profile, so restore the runtime
+# CLI paths used by the frontend terminal (bash -il).
+RUN echo 'export PATH="/opt/hermes/bin:/opt/hermes/.venv/bin:/opt/data/.npm-global/bin:/opt/data/.local/bin:$PATH"' > /etc/profile.d/hermes.sh
 RUN mkdir -p /opt/data
 VOLUME [ "/opt/data" ]
 
