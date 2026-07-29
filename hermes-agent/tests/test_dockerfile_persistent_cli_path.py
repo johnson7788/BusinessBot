@@ -8,6 +8,7 @@ import pytest
 HERMES_ROOT = Path(__file__).resolve().parent.parent
 PERSISTENT_CLI_PATHS = (
     "/opt/data/.npm-global/bin",
+    "/opt/data/bin",
     "/opt/data/.local/bin",
 )
 
