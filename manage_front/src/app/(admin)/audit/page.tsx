@@ -37,7 +37,9 @@ export default function AuditPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const totalPages = data ? Math.ceil(data.total / 20) : 0;
+  // Clamp totalPages to at least 1: with total=0 the old expression yielded 0,
+  // showing "1 / 0" and breaking the page >= totalPages next-button boundary.
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / 20)) : 1;
 
   return (
     <div>
@@ -96,7 +98,7 @@ export default function AuditPage() {
             <p className="text-sm text-gray-500">共 {data?.total ?? 0} 条记录</p>
             <div className="space-x-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>上一页</Button>
-              <span className="text-sm">{page} / {totalPages || 1}</span>
+              <span className="text-sm">{page} / {totalPages}</span>
               <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>下一页</Button>
             </div>
           </div>

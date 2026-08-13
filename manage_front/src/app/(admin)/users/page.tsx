@@ -132,7 +132,9 @@ export default function UsersPage() {
     }
   }
 
-  const totalPages = data ? Math.ceil(data.total / 20) : 0;
+  // Clamp totalPages to at least 1: with total=0 the old expression yielded 0,
+  // showing "1 / 0" and breaking the page >= totalPages next-button boundary.
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / 20)) : 1;
 
   return (
     <div>
