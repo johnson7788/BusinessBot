@@ -38,7 +38,7 @@ RUN if [ -n "${APT_DEBIAN_MIRROR}" ]; then \
     fi && \
     apt-get -o Acquire::Retries=5 -o Acquire::Queue-Mode=access -o Acquire::http::Pipeline-Depth=0 update && \
     apt-get -o Acquire::Retries=5 -o Acquire::Queue-Mode=access -o Acquire::http::Pipeline-Depth=0 install -y --no-install-recommends \
-    ca-certificates curl iputils-ping python3 python-is-python3 ripgrep ffmpeg gcc g++ make cmake python3-dev python3-venv libffi-dev libolm-dev procps git openssh-client docker-cli xz-utils && \
+    ca-certificates curl iputils-ping python3 python-is-python3 ripgrep ffmpeg gcc g++ make cmake python3-dev python3-venv libffi-dev libolm-dev procps git openssh-client docker-cli xz-utils unzip file p7zip-full && \
     rm -rf /var/lib/apt/lists/*
 
 # ---------- s6-overlay install ----------
